@@ -11,7 +11,7 @@ variables:
 
   # Container registry service connection established during pipeline creation
   dockerRegistryServiceConnection: '2a98f282-939a-4879-8343-7c5e2c983b7f'
-  imageRepository: 'mysampleapp'
+  imageRepository: 'webapp-container-kube'
   containerRegistry: 'acrkubeappdeploy.azurecr.io'
   dockerfilePath: '**/Dockerfile'
   tag: '$(Build.BuildId)'
@@ -75,4 +75,5 @@ stages:
                 $(imagePullSecret)
               containers: |
                 $(containerRegistry)/$(imageRepository):$(tag)
+
 
