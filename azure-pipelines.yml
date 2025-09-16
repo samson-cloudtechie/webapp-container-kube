@@ -4,76 +4,33 @@
 
 trigger: none
 
-resources:
-- repo: self
-
-variables:
-
-  # Container registry service connection established during pipeline creation
-  dockerRegistryServiceConnection: '2a98f282-939a-4879-8343-7c5e2c983b7f'
-  imageRepository: 'webapp-container-kube'
-  containerRegistry: 'acrkubeappdeploy.azurecr.io'
-  dockerfilePath: '**/Dockerfile'
-  tag: '$(Build.BuildId)'
-  imagePullSecret: 'acrkubeappdeploy1ebc-auth'
-
-  # Agent VM image name
-  vmImageName: 'ubuntu-latest'
+pool:
+  vmImage: ubuntu-latest
 
 
-stages:
-- stage: Build
-  displayName: Build stage
-  jobs:
-  - job: Build
-    displayName: Build
-    pool:
-      vmImage: $(vmImageName)
-    steps:
-    - task: Docker@2
-      displayName: Build and push an image to container registry
-      inputs:
-        command: buildAndPush
-        repository: $(imageRepository)
-        dockerfile: $(dockerfilePath)
-        containerRegistry: $(dockerRegistryServiceConnection)
-        tags: |
-          $(tag)
+steps:
+- task: AzureCLI@2
+  inputs:
+    azureSubscription: 'Azure subscription 1(09ead458-04a3-47fe-94fe-d82d54e0a841)'
+    scriptType: 'bash'
+    scriptLocation: 'inlineScript'
+    inlineScript: |
+      docker build -t acrkubeappdeploy.azurecr.io/mysampleweb-app:tag mysampleweb-app
+      az acr login -n acrkubeappdeploy
+      docker push acrkubeappdeploy.azurecr.io/mysampleweb-app:tag
 
-    - upload: manifests
-      artifact: manifests
+- script: cat Manifests/deployment.yml
 
-- stage: Deploy
-  displayName: Deploy stage
-  dependsOn: Build
-
-  jobs:
-  - deployment: Deploy
-    displayName: Deploy
-    pool:
-      vmImage: $(vmImageName)
-    environment: 'samsoncloudtechiewebappcontainerkube.default'
-    strategy:
-      runOnce:
-        deploy:
-          steps:
-          - task: KubernetesManifest@0
-            displayName: Create imagePullSecret
-            inputs:
-              action: createSecret
-              secretName: $(imagePullSecret)
-              dockerRegistryEndpoint: $(dockerRegistryServiceConnection)
-
-          - task: KubernetesManifest@0
-            displayName: Deploy to Kubernetes cluster
-            inputs:
-              action: deploy
-              manifests: |
-                $(Pipeline.Workspace)/manifests/deployment.yml
-                $(Pipeline.Workspace)/manifests/service.yml
-              imagePullSecrets: |
-                $(imagePullSecret)
-              containers: |
-                $(containerRegistry)/$(imageRepository):$(tag)
-
-
+- task: Kubernetes@1
+  inputs:
+    connectionType: 'Kubernetes Service Connection'
+    kubernetesServiceEndpoint: 'kube-contn-app-cont-kube'
+    namespace: 'default'
+    command: 'apply'
+    useConfigurationFile: true
+    configuration: 'Manifests'
+    secretType: 'dockerRegistry'
+    containerRegistryType: 'Azure Container Registry'
+    azureSubscriptionEndpointForSecrets: 'Azure subscription 1(09ead458-04a3-47fe-94fe-d82d54e0a841)'
+    azureContainerRegistry: 'acrkubeappdeploy.azurecr.io'
+    forceUpdate: false
