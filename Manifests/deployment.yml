@@ -17,7 +17,7 @@ spec:
       terminationGracePeriodSeconds: 30
       containers:
       - name: mysample-app
-        image: acrkubeappdeploy.azurecr.io/mysample-app
+        image: acrkubeappdeploy.azurecr.io/mysampleweb-app
         imagePullPolicy: "Always"
         ports:
         - containerPort: 80
@@ -27,16 +27,16 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: mysample-app
+  name: mysampleweb-app
   labels:
-    app: mysample-app
+    app: mysampleweb-app
 spec:
   type: LoadBalancer
   ports:
   - port: 80
     targetPort: 80
   selector:
-    app: mysample-app
+    app: mysampleweb-app
 
 
 
