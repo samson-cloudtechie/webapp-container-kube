@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mysampleweb-app-deployment
+  labels:
+    app: mysampleweb-app
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: mysampleweb-app
+  template:
+    metadata:
+      labels:
+        app: mysampleweb-app
+    spec:
+      terminationGracePeriodSeconds: 30
+      containers:
+      - name: mysample-app
+        image: acrkubeappdeploy.azurecr.io/mysample-app
+        imagePullPolicy: "Always"
+        ports:
+        - containerPort: 80
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysample-app
+  labels:
+    app: mysample-app
+spec:
+  type: LoadBalancer
+  ports:
+  - port: 80
+    targetPort: 80
+  selector:
+    app: mysample-app
+
+
+
+
